@@ -29,7 +29,7 @@ chmod +x start.sh
 ./start.sh
 ```
 
-### Option 2: Docker Compose
+### Option 2: Docker Compose (Development)
 
 ```bash
 # Start all services
@@ -40,7 +40,24 @@ docker-compose up -d
 # API Documentation: http://localhost:8000/docs
 ```
 
-### Option 3: Manual Setup
+### Option 3: Production Deployment
+
+**Quick Deploy:**
+```bash
+# Linux/macOS
+./deploy.sh start
+
+# Windows
+deploy.bat start
+```
+
+**Access:**
+- Frontend: http://localhost:3000
+- API Documentation: http://localhost:3000/api/v1/docs
+
+📖 **详细部署指南**: [DEPLOYMENT.md](./DEPLOYMENT.md) | [快速部署](./QUICK_DEPLOY.md)
+
+### Option 4: Manual Setup
 
 **Backend:**
 ```bash

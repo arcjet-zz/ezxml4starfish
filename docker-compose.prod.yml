@@ -2,19 +2,14 @@ version: '3.8'
 
 services:
   backend:
-    build:
+    build: 
       context: ./backend
       dockerfile: Dockerfile
     container_name: ezxml-backend
     # 生产环境不暴露后端端口，只通过前端nginx代理访问
-    # ports:
-    #   - "8000:8000"
     environment:
       - PYTHONPATH=/app
       - ENVIRONMENT=production
-    # 生产环境不挂载源码目录，使用容器内的代码
-    # volumes:
-    #   - ./backend:/app
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -22,9 +17,18 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
 
   frontend:
-    build:
+    build: 
       context: ./frontend
       dockerfile: Dockerfile
     container_name: ezxml-frontend
@@ -34,20 +38,21 @@ services:
       backend:
         condition: service_healthy
     restart: unless-stopped
-    # 可选：挂载nginx配置文件以便动态修改
-    volumes:
-      - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-
-# 注释掉原有的网络创建配置，使用现有网络
-# networks:
-#   default:
-#     name: ezxml-network
+    # 资源限制
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
 # 使用现有的mynetwork网络
 networks:
