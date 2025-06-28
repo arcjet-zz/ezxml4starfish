@@ -14,7 +14,8 @@ import {
   AccordionDetails,
   Switch,
   FormControlLabel,
-  Divider
+  Divider,
+  FormHelperText
 } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
 import { useProjectStore } from '../../store/projectStore';
@@ -249,10 +250,14 @@ const GlobalSettings: React.FC = () => {
                     label="求解器类型"
                     onChange={(e) => handleSettingsChange('solver_type', e.target.value)}
                   >
-                    <MenuItem value="SOR">SOR (逐次超松弛)</MenuItem>
                     <MenuItem value="poisson">Poisson (泊松求解器)</MenuItem>
                     <MenuItem value="constant-ef">Constant EF (恒定电场)</MenuItem>
+                    <MenuItem value="qn">QN (准中性求解器)</MenuItem>
+                    <MenuItem value="none">无求解器</MenuItem>
                   </Select>
+                  <FormHelperText>
+                    选择符合Starfish规范的求解器类型
+                  </FormHelperText>
                 </FormControl>
               </Grid>
 
@@ -277,6 +282,27 @@ const GlobalSettings: React.FC = () => {
                   inputProps={{ step: 'any', min: 1e-12 }}
                 />
               </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  label="求解方法"
+                  value={localSettings.method || ''}
+                  onChange={(e) => handleSettingsChange('method', e.target.value)}
+                  fullWidth
+                  helperText="求解器使用的方法"
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  label="求解器组件"
+                  value={localSettings.comps || ''}
+                  onChange={(e) => handleSettingsChange('comps', e.target.value)}
+                  fullWidth
+                  placeholder="0,0"
+                  helperText="求解器组件配置，格式: x,y"
+                />
+              </Grid>
             </Grid>
           </Paper>
         </Grid>
@@ -289,37 +315,173 @@ const GlobalSettings: React.FC = () => {
             </AccordionSummary>
             <AccordionDetails>
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="参考密度 (n0)"
-                    type="number"
-                    value={localSettings.n0 || ''}
-                    onChange={(e) => handleSettingsChange('n0', e.target.value ? parseFloat(e.target.value) : undefined)}
-                    fullWidth
-                    inputProps={{ step: 'any' }}
-                  />
-                </Grid>
+                {/* 泊松求解器参数 */}
+                {localSettings.solver_type === 'poisson' && (
+                  <>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle1" gutterBottom>
+                        泊松求解器参数
+                      </Typography>
+                    </Grid>
 
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="电子温度 (Te0)"
-                    type="number"
-                    value={localSettings.Te0 || ''}
-                    onChange={(e) => handleSettingsChange('Te0', e.target.value ? parseFloat(e.target.value) : undefined)}
-                    fullWidth
-                    inputProps={{ step: 'any' }}
-                  />
-                </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <FormControl fullWidth>
+                        <InputLabel>求解方法 (method)</InputLabel>
+                        <Select
+                          value={localSettings.method || ''}
+                          label="求解方法 (method)"
+                          onChange={(e) => handleSettingsChange('method', e.target.value)}
+                        >
+                          <MenuItem value="">默认</MenuItem>
+                          <MenuItem value="gs">高斯-赛德尔 (gs)</MenuItem>
+                          <MenuItem value="jacobi">雅可比 (jacobi)</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
 
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="参考电势 (phi0)"
-                    type="number"
-                    value={localSettings.phi0 || ''}
-                    onChange={(e) => handleSettingsChange('phi0', e.target.value ? parseFloat(e.target.value) : undefined)}
-                    fullWidth
-                    inputProps={{ step: 'any' }}
-                  />
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="参考密度 (n0)"
+                        type="number"
+                        value={localSettings.n0 || ''}
+                        onChange={(e) => handleSettingsChange('n0', e.target.value ? parseFloat(e.target.value) : undefined)}
+                        fullWidth
+                        inputProps={{ step: 'any' }}
+                        helperText="参考密度 (m⁻³)"
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="电子温度 (Te0)"
+                        type="number"
+                        value={localSettings.Te0 || ''}
+                        onChange={(e) => handleSettingsChange('Te0', e.target.value ? parseFloat(e.target.value) : undefined)}
+                        fullWidth
+                        inputProps={{ step: 'any' }}
+                        helperText="电子温度 (eV)"
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="参考电势 (phi0)"
+                        type="number"
+                        value={localSettings.phi0 || ''}
+                        onChange={(e) => handleSettingsChange('phi0', e.target.value ? parseFloat(e.target.value) : undefined)}
+                        fullWidth
+                        inputProps={{ step: 'any' }}
+                        helperText="参考电势 (V)"
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="最大迭代次数 (max_it)"
+                        type="number"
+                        value={localSettings.max_it || ''}
+                        onChange={(e) => handleSettingsChange('max_it', e.target.value ? parseInt(e.target.value) : undefined)}
+                        fullWidth
+                        inputProps={{ min: 1 }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="非线性最大迭代次数 (nl_max_it)"
+                        type="number"
+                        value={localSettings.nl_max_it || ''}
+                        onChange={(e) => handleSettingsChange('nl_max_it', e.target.value ? parseInt(e.target.value) : undefined)}
+                        fullWidth
+                        inputProps={{ min: 1 }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="线性容差 (tol)"
+                        type="number"
+                        value={localSettings.tol || ''}
+                        onChange={(e) => handleSettingsChange('tol', e.target.value ? parseFloat(e.target.value) : undefined)}
+                        fullWidth
+                        inputProps={{ step: 'any' }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="非线性容差 (nl_tol)"
+                        type="number"
+                        value={localSettings.nl_tol || ''}
+                        onChange={(e) => handleSettingsChange('nl_tol', e.target.value ? parseFloat(e.target.value) : undefined)}
+                        fullWidth
+                        inputProps={{ step: 'any' }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="收敛容差 (tolerance)"
+                        type="number"
+                        value={localSettings.tolerance || ''}
+                        onChange={(e) => handleSettingsChange('tolerance', e.target.value ? parseFloat(e.target.value) : undefined)}
+                        fullWidth
+                        inputProps={{ step: 'any' }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={localSettings.linear || false}
+                            onChange={(e) => handleSettingsChange('linear', e.target.checked)}
+                          />
+                        }
+                        label="线性求解 (linear)"
+                      />
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={localSettings.initial_only || false}
+                            onChange={(e) => handleSettingsChange('initial_only', e.target.checked)}
+                          />
+                        }
+                        label="仅初始求解 (initial_only)"
+                      />
+                    </Grid>
+                  </>
+                )}
+
+                {/* 常电场求解器参数 */}
+                {localSettings.solver_type === 'constant-ef' && (
+                  <>
+                    <Grid item xs={12}>
+                      <Typography variant="subtitle1" gutterBottom>
+                        常电场求解器参数
+                      </Typography>
+                    </Grid>
+
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        label="电场分量 (comps)"
+                        value={localSettings.comps || ''}
+                        onChange={(e) => handleSettingsChange('comps', e.target.value)}
+                        fullWidth
+                        helperText="如: Ex,Ey"
+                      />
+                    </Grid>
+                  </>
+                )}
+
+                {/* 通用参数 */}
+                <Grid item xs={12}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    通用参数
+                  </Typography>
                 </Grid>
 
                 <Grid item xs={12} sm={6}>
@@ -333,7 +495,7 @@ const GlobalSettings: React.FC = () => {
                   />
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid item xs={12} sm={6}>
                   <FormControlLabel
                     control={
                       <Switch
@@ -342,6 +504,78 @@ const GlobalSettings: React.FC = () => {
                       />
                     }
                     label="随机化种子"
+                  />
+                </Grid>
+
+                {/* 平均化设置 */}
+                <Grid item xs={12}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    平均化设置
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="平均化频率 (averaging_frequency)"
+                    type="number"
+                    value={localSettings.averaging_frequency || ''}
+                    onChange={(e) => handleSettingsChange('averaging_frequency', e.target.value ? parseInt(e.target.value) : undefined)}
+                    fullWidth
+                    inputProps={{ min: 1 }}
+                    helperText="平均化频率"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="平均化开始迭代 (averaging_start_it)"
+                    type="number"
+                    value={localSettings.averaging_start_it || ''}
+                    onChange={(e) => handleSettingsChange('averaging_start_it', e.target.value ? parseInt(e.target.value) : undefined)}
+                    fullWidth
+                    inputProps={{ min: 0 }}
+                    helperText="开始平均化的迭代次数"
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <TextField
+                    label="平均化变量 (averaging_variables)"
+                    value={localSettings.averaging_variables || ''}
+                    onChange={(e) => handleSettingsChange('averaging_variables', e.target.value)}
+                    fullWidth
+                    helperText="如: phi,nd.Ar+"
+                  />
+                </Grid>
+
+                {/* 动画设置 */}
+                <Grid item xs={12}>
+                  <Typography variant="subtitle1" gutterBottom>
+                    动画设置
+                  </Typography>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="动画开始迭代 (animation_start_it)"
+                    type="number"
+                    value={localSettings.animation_start_it || ''}
+                    onChange={(e) => handleSettingsChange('animation_start_it', e.target.value ? parseInt(e.target.value) : undefined)}
+                    fullWidth
+                    inputProps={{ min: 0 }}
+                    helperText="开始动画的迭代次数"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="动画频率 (animation_frequency)"
+                    type="number"
+                    value={localSettings.animation_frequency || ''}
+                    onChange={(e) => handleSettingsChange('animation_frequency', e.target.value ? parseInt(e.target.value) : undefined)}
+                    fullWidth
+                    inputProps={{ min: 1 }}
+                    helperText="动画输出频率"
                   />
                 </Grid>
               </Grid>

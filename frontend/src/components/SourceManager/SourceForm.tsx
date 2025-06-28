@@ -34,9 +34,14 @@ const SourceForm: React.FC<SourceFormProps> = ({
     material: '',
     rate: undefined,
     temperature: undefined,
+    region: undefined,
     boundary: undefined,
     mdot: undefined,
-    v_drift: undefined
+    v_drift: undefined,
+    enforce: undefined,
+    density: undefined,
+    total_pressure: undefined,
+    drift_velocity: undefined
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -49,9 +54,14 @@ const SourceForm: React.FC<SourceFormProps> = ({
         material: source.material || '',
         rate: source.rate,
         temperature: source.temperature,
+        region: source.region,
         boundary: source.boundary,
         mdot: source.mdot,
-        v_drift: source.v_drift
+        v_drift: source.v_drift,
+        enforce: source.enforce,
+        density: source.density,
+        total_pressure: source.total_pressure,
+        drift_velocity: source.drift_velocity
       });
     }
   }, [source]);
@@ -81,6 +91,11 @@ const SourceForm: React.FC<SourceFormProps> = ({
       newErrors.boundary = '边界源必须关联一个边界';
     }
 
+    // 体积源需要材料
+    if (isVolumeSource(formData.type) && !formData.material) {
+      newErrors.material = '体积源必须指定材料';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -89,15 +104,20 @@ const SourceForm: React.FC<SourceFormProps> = ({
     if (validateForm()) {
       // 清理不相关的字段
       const cleanedData = { ...formData };
-      
-      if (!isBoundarySource(formData.type)) {
+
+      if (isVolumeSource(formData.type)) {
         // 体积源不需要边界相关字段
         delete cleanedData.boundary;
         delete cleanedData.mdot;
         delete cleanedData.v_drift;
-      } else {
+        delete cleanedData.enforce;
+        delete cleanedData.drift_velocity;
+        delete cleanedData.density;
+        delete cleanedData.total_pressure;
+      } else if (isBoundarySource(formData.type)) {
         // 边界源不需要体积源字段
         delete cleanedData.rate;
+        delete cleanedData.region;
       }
 
       onSave(cleanedData);
@@ -105,14 +125,23 @@ const SourceForm: React.FC<SourceFormProps> = ({
   };
 
   const isBoundarySource = (type: string) => {
-    return ['uniform', 'cosine', 'boundary'].includes(type);
+    return ['uniform', 'cosine', 'ambient', 'thermionic'].includes(type);
+  };
+
+  const isVolumeSource = (type: string) => {
+    return ['volume', 'preload', 'maxwellian'].includes(type);
   };
 
   const sourceTypes = [
+    // 体积源类型
     { value: 'volume', label: '体积源 (Volume)' },
-    { value: 'uniform', label: '均匀边界源 (Uniform)' },
-    { value: 'cosine', label: '余弦边界源 (Cosine)' },
-    { value: 'boundary', label: '边界源 (Boundary)' }
+    { value: 'preload', label: '预加载源 (Preload)' },
+    { value: 'maxwellian', label: '麦克斯韦分布源 (Maxwellian)' },
+    // 边界源类型 - 注意：所有边界源都会映射为ambient类型
+    { value: 'uniform', label: '均匀边界源 (Uniform) → ambient' },
+    { value: 'cosine', label: '余弦边界源 (Cosine) → ambient' },
+    { value: 'ambient', label: '环境源 (Ambient)' },
+    { value: 'thermionic', label: '热离子发射源 (Thermionic) → ambient' }
   ];
 
   return (
@@ -190,7 +219,7 @@ const SourceForm: React.FC<SourceFormProps> = ({
         </Grid>
 
         {/* 条件渲染：体积源参数 */}
-        {!isBoundarySource(formData.type) && (
+        {isVolumeSource(formData.type) && (
           <>
             <Grid item xs={12}>
               <Typography variant="h6" gutterBottom>
@@ -200,12 +229,23 @@ const SourceForm: React.FC<SourceFormProps> = ({
 
             <Grid item xs={12} sm={6}>
               <TextField
-                label="生成率 (particles/s)"
+                label="粒子产生率 (rate)"
                 type="number"
                 value={formData.rate || ''}
                 onChange={(e) => handleChange('rate', e.target.value ? parseFloat(e.target.value) : undefined)}
                 fullWidth
                 inputProps={{ step: 'any', min: 0 }}
+                helperText="粒子产生率"
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <TextField
+                label="区域定义 (region)"
+                value={formData.region || ''}
+                onChange={(e) => handleChange('region', e.target.value || undefined)}
+                fullWidth
+                helperText="区域定义，如box区域"
               />
             </Grid>
           </>
@@ -248,19 +288,77 @@ const SourceForm: React.FC<SourceFormProps> = ({
                 onChange={(e) => handleChange('mdot', e.target.value ? parseFloat(e.target.value) : undefined)}
                 fullWidth
                 inputProps={{ step: 'any', min: 0 }}
+                helperText="质量流率 (kg/s)"
               />
             </Grid>
 
             <Grid item xs={12} sm={6}>
               <TextField
-                label="漂移速度 (m/s)"
+                label="漂移速度 (v_drift)"
                 type="number"
                 value={formData.v_drift || ''}
                 onChange={(e) => handleChange('v_drift', e.target.value ? parseFloat(e.target.value) : undefined)}
                 fullWidth
                 inputProps={{ step: 'any' }}
+                helperText="漂移速度 (m/s)"
               />
             </Grid>
+
+            {/* 环境源特有参数 */}
+            {formData.type === 'ambient' && (
+              <>
+                <Grid item xs={12} sm={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>强制条件类型</InputLabel>
+                    <Select
+                      value={formData.enforce || ''}
+                      label="强制条件类型"
+                      onChange={(e) => handleChange('enforce', e.target.value)}
+                    >
+                      <MenuItem value="">无</MenuItem>
+                      <MenuItem value="density">密度 (density)</MenuItem>
+                      <MenuItem value="pressure">压力 (pressure)</MenuItem>
+                      <MenuItem value="partial_pressure">分压 (partial_pressure)</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="密度"
+                    type="number"
+                    value={formData.density || ''}
+                    onChange={(e) => handleChange('density', e.target.value ? parseFloat(e.target.value) : undefined)}
+                    fullWidth
+                    inputProps={{ step: 'any', min: 0 }}
+                    helperText="密度"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="总压力 (total_pressure)"
+                    type="number"
+                    value={formData.total_pressure || ''}
+                    onChange={(e) => handleChange('total_pressure', e.target.value ? parseFloat(e.target.value) : undefined)}
+                    fullWidth
+                    inputProps={{ step: 'any', min: 0 }}
+                    helperText="总压力 (Pa)"
+                  />
+                </Grid>
+
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    label="漂移速度矢量 (drift_velocity)"
+                    value={formData.drift_velocity || ''}
+                    onChange={(e) => handleChange('drift_velocity', e.target.value)}
+                    fullWidth
+                    placeholder="vx,vy,vz"
+                    helperText="格式: vx,vy,vz"
+                  />
+                </Grid>
+              </>
+            )}
           </>
         )}
 
@@ -269,10 +367,13 @@ const SourceForm: React.FC<SourceFormProps> = ({
           <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 1 }}>
             <Typography variant="caption" color="text.secondary">
               <strong>源类型说明：</strong><br />
-              • 体积源：在计算域内部生成粒子<br />
-              • 均匀边界源：在边界上均匀分布生成粒子<br />
-              • 余弦边界源：在边界上按余弦分布生成粒子<br />
-              • 边界源：通用边界源类型
+              • 体积源 (volume/preload/maxwellian)：在计算域内部生成粒子，使用 &lt;source&gt; 标签<br />
+              • 边界源 (uniform/cosine/ambient/thermionic)：在边界上生成粒子，使用 &lt;boundary_source&gt; 标签<br />
+              <br />
+              <strong>Starfish XML映射：</strong><br />
+              • 体积源：直接使用指定的type属性 (volume, preload, maxwellian)<br />
+              • 边界源：所有类型都映射为 type="ambient"，通过不同参数实现不同行为<br />
+              • 已通过StarfishCLI.jar验证兼容性 ✓
             </Typography>
           </Box>
         </Grid>

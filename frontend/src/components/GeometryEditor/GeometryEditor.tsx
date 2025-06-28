@@ -33,7 +33,7 @@ const GeometryEditor: React.FC = () => {
     const newBoundary: Boundary = {
       id: `boundary_${Date.now()}`,
       name: `边界 ${project.boundaries.length + 1}`,
-      type: 'SOLID',
+      type: 'solid',
       potential: 0.0,
       nodes: []
     };

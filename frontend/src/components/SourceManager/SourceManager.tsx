@@ -64,11 +64,16 @@ const SourceManager: React.FC = () => {
 
   const getSourceTypeColor = (type: string) => {
     switch (type) {
+      // 体积源类型
       case 'volume':
+      case 'preload':
+      case 'maxwellian':
         return 'primary';
-      case 'boundary':
+      // 边界源类型
       case 'uniform':
       case 'cosine':
+      case 'ambient':
+      case 'thermionic':
         return 'secondary';
       default:
         return 'default';

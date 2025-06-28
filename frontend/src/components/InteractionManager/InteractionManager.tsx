@@ -189,9 +189,10 @@ const InteractionManager: React.FC = () => {
         </Typography>
         <Typography variant="body2" color="text.secondary">
           • <strong>碰撞 (collision)</strong>: 粒子间的弹性或非弹性碰撞<br />
-          • <strong>电离 (ionization)</strong>: 中性粒子被电离成离子和电子<br />
-          • <strong>激发 (excitation)</strong>: 粒子的能级跃迁<br />
-          • <strong>电荷交换 (charge_exchange)</strong>: 离子与中性粒子间的电荷转移
+          • <strong>电离 (ionization)</strong>: 中性粒子被电离成离子和电子 → 映射为elastic<br />
+          • <strong>激发 (excitation)</strong>: 粒子的能级跃迁 → 映射为elastic<br />
+          • <strong>电荷交换 (charge_exchange)</strong>: 离子与中性粒子间的电荷转移 → 映射为elastic<br />
+          <strong>注意</strong>: Starfish只支持elastic和inelastic模型，其他类型会自动映射。
         </Typography>
       </Box>
     </Box>

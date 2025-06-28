@@ -205,7 +205,7 @@ const GeometryCanvas: React.FC<GeometryCanvasProps> = ({
             points={points}
             stroke={color}
             strokeWidth={isSelected ? 3 : 2}
-            closed={boundary.type === 'SOLID'}
+            closed={boundary.type === 'solid'}
             onClick={(e) => handleBoundaryClick(boundary.id, e)}
           />
           

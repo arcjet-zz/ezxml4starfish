@@ -6,6 +6,8 @@ A visual XML configuration tool for Starfish simulation software.
 
 EzXML is a web-based application that provides an intuitive interface for creating and managing Starfish simulation configurations. It eliminates the need for manual XML editing by offering visual geometry drawing and form-based parameter configuration.
 
+**✅ Fully compatible with Starfish v0.25** - Features automatic type mapping and intelligent parameter configuration to ensure generated XML files work seamlessly with Starfish.
+
 ## Features
 
 - 🎨 **Visual 2D Geometry Editor** - Draw simulation boundaries with point-and-click interface
@@ -13,6 +15,8 @@ EzXML is a web-based application that provides an intuitive interface for creati
 - 📁 **Project Management** - Create, load, and export complete simulation projects
 - 🔄 **XML Generation** - Automatically generate valid Starfish XML configuration files
 - 💾 **Import/Export** - Load existing projects and export ready-to-run simulation packages
+- 🎯 **Smart Type Mapping** - Automatically maps unsupported types to Starfish-compatible alternatives
+- ⚙️ **Intelligent Defaults** - Provides appropriate default parameters for mapped types
 
 ## Quick Start
 

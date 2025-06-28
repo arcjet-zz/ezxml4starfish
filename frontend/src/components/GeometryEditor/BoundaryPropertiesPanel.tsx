@@ -10,7 +10,10 @@ import {
   MenuItem,
   Box,
   Button,
-  Divider
+  Divider,
+  FormHelperText,
+  FormControlLabel,
+  Switch
 } from '@mui/material';
 import { Boundary } from '../../types';
 
@@ -87,20 +90,74 @@ const BoundaryPropertiesPanel: React.FC<BoundaryPropertiesPanelProps> = ({
               label="边界类型"
               onChange={(e) => handleChange('type', e.target.value)}
             >
-              <MenuItem value="SOLID">固体边界 (SOLID)</MenuItem>
-              <MenuItem value="OPEN">开放边界 (OPEN)</MenuItem>
-              <MenuItem value="SYMMETRY">对称边界 (SYMMETRY)</MenuItem>
+              <MenuItem value="solid">固体边界 (solid)</MenuItem>
+              <MenuItem value="virtual">虚拟边界 (virtual)</MenuItem>
             </Select>
+            <FormHelperText>
+              选择符合Starfish规范的边界类型
+            </FormHelperText>
           </FormControl>
 
           <TextField
-            label="电势 (V)"
+            label="边界值 (value)"
+            value={localBoundary.value || ''}
+            onChange={(e) => handleChange('value', e.target.value)}
+            fullWidth
+            size="small"
+            helperText="边界值，如电势值或其他条件"
+          />
+
+          <FormControlLabel
+            control={
+              <Switch
+                checked={localBoundary.reverse || false}
+                onChange={(e) => handleChange('reverse', e.target.checked)}
+                size="small"
+              />
+            }
+            label="反转边界 (reverse)"
+          />
+
+          <TextField
+            label="电势 (V) - 兼容性"
             type="number"
-            value={localBoundary.potential}
-            onChange={(e) => handleChange('potential', parseFloat(e.target.value) || 0)}
+            value={localBoundary.potential || ''}
+            onChange={(e) => handleChange('potential', e.target.value ? parseFloat(e.target.value) : undefined)}
             fullWidth
             size="small"
             inputProps={{ step: 0.1 }}
+            helperText="向后兼容，将映射到value字段"
+          />
+
+          <TextField
+            label="材料"
+            value={localBoundary.material || ''}
+            onChange={(e) => handleChange('material', e.target.value)}
+            fullWidth
+            size="small"
+            helperText="边界关联的材料名称"
+          />
+
+          <TextField
+            label="路径"
+            value={localBoundary.path || ''}
+            onChange={(e) => handleChange('path', e.target.value)}
+            fullWidth
+            size="small"
+            multiline
+            rows={2}
+            helperText="SVG路径格式的边界几何定义"
+          />
+
+          <TextField
+            label="温度 (K)"
+            type="number"
+            value={localBoundary.temp || localBoundary.temperature || ''}
+            onChange={(e) => handleChange('temp', e.target.value ? parseFloat(e.target.value) : undefined)}
+            fullWidth
+            size="small"
+            inputProps={{ step: 0.1 }}
+            helperText="边界温度"
           />
 
           <Divider />

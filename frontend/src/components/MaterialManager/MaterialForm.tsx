@@ -12,7 +12,8 @@ import {
   Button,
   Accordion,
   AccordionSummary,
-  AccordionDetails
+  AccordionDetails,
+  FormHelperText
 } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
 import { Material } from '../../types';
@@ -30,15 +31,19 @@ const MaterialForm: React.FC<MaterialFormProps> = ({
 }) => {
   const [formData, setFormData] = useState<Omit<Material, 'id'>>({
     name: '',
-    type: 'GAS',
-    mass: 1.0,
+    type: 'kinetic',
     charge: 0.0,
     molwt: undefined,
+    mass: undefined,
     spwt: undefined,
+    init: undefined,
     ref_temp: undefined,
     visc_temp_index: undefined,
     vss_alpha: undefined,
-    diam: undefined
+    diam: undefined,
+    model: undefined,
+    kTe0: undefined,
+    density: undefined
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -48,14 +53,18 @@ const MaterialForm: React.FC<MaterialFormProps> = ({
       setFormData({
         name: material.name,
         type: material.type,
-        mass: material.mass,
         charge: material.charge,
         molwt: material.molwt,
+        mass: material.mass,
         spwt: material.spwt,
+        init: material.init,
         ref_temp: material.ref_temp,
         visc_temp_index: material.visc_temp_index,
         vss_alpha: material.vss_alpha,
-        diam: material.diam
+        diam: material.diam,
+        model: material.model,
+        kTe0: material.kTe0,
+        density: material.density
       });
     }
   }, [material]);
@@ -76,7 +85,7 @@ const MaterialForm: React.FC<MaterialFormProps> = ({
       newErrors.name = '材料名称不能为空';
     }
 
-    if (formData.mass <= 0) {
+    if (formData.mass !== undefined && formData.mass <= 0) {
       newErrors.mass = '质量必须大于0';
     }
 
@@ -90,12 +99,11 @@ const MaterialForm: React.FC<MaterialFormProps> = ({
     }
   };
 
-  // 预设材料模板
+  // 预设材料模板 - 符合Starfish规范
   const materialTemplates = {
     'Ar': {
       name: 'Ar',
-      type: 'GAS' as const,
-      mass: 39.948,
+      type: 'kinetic' as const,
       charge: 0,
       molwt: 39.948,
       spwt: 1e11,
@@ -106,25 +114,27 @@ const MaterialForm: React.FC<MaterialFormProps> = ({
     },
     'Ar+': {
       name: 'Ar+',
-      type: 'ION' as const,
-      mass: 39.948,
+      type: 'kinetic' as const,
       charge: 1,
       molwt: 39.948,
       spwt: 1e11,
-      ref_temp: 273
+      ref_temp: 273,
+      visc_temp_index: 0.81,
+      vss_alpha: 1.00,
+      diam: 4.17e-10
     },
     'e-': {
       name: 'e-',
-      type: 'ELECTRON' as const,
-      mass: 9.109e-31,
+      type: 'boltzmann_electrons' as const,
       charge: -1,
-      spwt: 1e11
+      model: 'qn',
+      kTe0: 1.5
     },
     'Cu': {
       name: 'Cu',
-      type: 'SOLID' as const,
-      mass: 63.546,
+      type: 'solid' as const,
       charge: 0,
+      molwt: 63.546,
       density: 8960,
       thermal_conductivity: 401,
       specific_heat: 385,
@@ -132,9 +142,9 @@ const MaterialForm: React.FC<MaterialFormProps> = ({
     },
     'Al': {
       name: 'Al',
-      type: 'SOLID' as const,
-      mass: 26.982,
+      type: 'solid' as const,
       charge: 0,
+      molwt: 26.982,
       density: 2700,
       thermal_conductivity: 237,
       specific_heat: 897,
@@ -142,13 +152,25 @@ const MaterialForm: React.FC<MaterialFormProps> = ({
     },
     'H2': {
       name: 'H2',
-      type: 'NEUTRAL' as const,
-      mass: 2.016,
+      type: 'kinetic' as const,
       charge: 0,
       molwt: 2.016,
       spwt: 1e11,
       ref_temp: 273,
+      visc_temp_index: 0.81,
+      vss_alpha: 1.00,
       diam: 2.89e-10
+    },
+    'O2': {
+      name: 'O2',
+      type: 'kinetic' as const,
+      charge: 0,
+      molwt: 32.0,
+      spwt: 1e11,
+      ref_temp: 273,
+      visc_temp_index: 0.81,
+      vss_alpha: 1.00,
+      diam: 4.07e-10
     }
   };
 
@@ -208,29 +230,37 @@ const MaterialForm: React.FC<MaterialFormProps> = ({
               label="材料类型"
               onChange={(e) => handleChange('type', e.target.value)}
             >
-              <MenuItem value="GAS">气体 (GAS)</MenuItem>
-              <MenuItem value="SOLID">固体 (SOLID)</MenuItem>
-              <MenuItem value="LIQUID">液体 (LIQUID)</MenuItem>
-              <MenuItem value="NEUTRAL">中性粒子 (NEUTRAL)</MenuItem>
-              <MenuItem value="ION">离子 (ION)</MenuItem>
-              <MenuItem value="ELECTRON">电子 (ELECTRON)</MenuItem>
-              <MenuItem value="PLASMA-ELECTRON">等离子体电子 (PLASMA-ELECTRON)</MenuItem>
-              <MenuItem value="PLASMA-ION">等离子体离子 (PLASMA-ION)</MenuItem>
+              <MenuItem value="kinetic">动力学材料 (kinetic)</MenuItem>
+              <MenuItem value="boltzmann_electrons">玻尔兹曼电子 (boltzmann_electrons)</MenuItem>
+              <MenuItem value="solid">固体材料 (solid)</MenuItem>
             </Select>
+            <FormHelperText>
+              选择符合Starfish规范的材料类型
+            </FormHelperText>
           </FormControl>
         </Grid>
 
         <Grid item xs={12} sm={6}>
           <TextField
-            label="质量"
+            label="分子量 (molwt) - 推荐"
             type="number"
-            value={formData.mass}
-            onChange={(e) => handleChange('mass', parseFloat(e.target.value) || 0)}
+            value={formData.molwt || ''}
+            onChange={(e) => handleChange('molwt', e.target.value ? parseFloat(e.target.value) : undefined)}
             fullWidth
-            required
-            error={!!errors.mass}
-            helperText={errors.mass}
             inputProps={{ step: 'any' }}
+            helperText="原子质量单位 (amu)，优先于质量字段"
+          />
+        </Grid>
+
+        <Grid item xs={12} sm={6}>
+          <TextField
+            label="质量 (mass) - 可选"
+            type="number"
+            value={formData.mass || ''}
+            onChange={(e) => handleChange('mass', e.target.value ? parseFloat(e.target.value) : undefined)}
+            fullWidth
+            inputProps={{ step: 'any' }}
+            helperText="质量 (kg)，当未提供molwt时使用"
           />
         </Grid>
 
@@ -242,51 +272,148 @@ const MaterialForm: React.FC<MaterialFormProps> = ({
             onChange={(e) => handleChange('charge', parseFloat(e.target.value) || 0)}
             fullWidth
             inputProps={{ step: 'any' }}
+            helperText="基本电荷单位"
           />
         </Grid>
 
-        {/* 扩展属性 */}
-        <Grid item xs={12}>
-          <Accordion>
-            <AccordionSummary expandIcon={<ExpandMore />}>
-              <Typography variant="h6">扩展属性</Typography>
-            </AccordionSummary>
-            <AccordionDetails>
-              <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="分子量 (molwt)"
-                    type="number"
-                    value={formData.molwt || ''}
-                    onChange={(e) => handleChange('molwt', e.target.value ? parseFloat(e.target.value) : undefined)}
-                    fullWidth
-                    inputProps={{ step: 'any' }}
-                  />
-                </Grid>
+        {/* 材料类型特定属性 */}
+        {formData.type === 'kinetic' && (
+          <Grid item xs={12}>
+            <Accordion>
+              <AccordionSummary expandIcon={<ExpandMore />}>
+                <Typography variant="h6">动力学材料属性</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="统计权重 (spwt)"
+                      type="number"
+                      value={formData.spwt || ''}
+                      onChange={(e) => handleChange('spwt', e.target.value ? parseFloat(e.target.value) : undefined)}
+                      fullWidth
+                      inputProps={{ step: 'any' }}
+                      helperText="每个计算粒子代表的真实粒子数"
+                    />
+                  </Grid>
 
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="统计权重 (spwt)"
-                    type="number"
-                    value={formData.spwt || ''}
-                    onChange={(e) => handleChange('spwt', e.target.value ? parseFloat(e.target.value) : undefined)}
-                    fullWidth
-                    inputProps={{ step: 'any' }}
-                  />
-                </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="初始化条件 (init)"
+                      value={formData.init || ''}
+                      onChange={(e) => handleChange('init', e.target.value || undefined)}
+                      fullWidth
+                      helperText="如: nd_back=1e10"
+                    />
+                  </Grid>
 
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="参考温度 (ref_temp)"
-                    type="number"
-                    value={formData.ref_temp || ''}
-                    onChange={(e) => handleChange('ref_temp', e.target.value ? parseFloat(e.target.value) : undefined)}
-                    fullWidth
-                    inputProps={{ step: 'any' }}
-                  />
-                </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="参考温度 (ref_temp)"
+                      type="number"
+                      value={formData.ref_temp || ''}
+                      onChange={(e) => handleChange('ref_temp', e.target.value ? parseFloat(e.target.value) : undefined)}
+                      fullWidth
+                      inputProps={{ step: 'any' }}
+                      helperText="温度 (K)"
+                    />
+                  </Grid>
 
-                <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="粘性温度指数 (visc_temp_index)"
+                      type="number"
+                      value={formData.visc_temp_index || ''}
+                      onChange={(e) => handleChange('visc_temp_index', e.target.value ? parseFloat(e.target.value) : undefined)}
+                      fullWidth
+                      inputProps={{ step: 'any' }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="VSS alpha参数 (vss_alpha)"
+                      type="number"
+                      value={formData.vss_alpha || ''}
+                      onChange={(e) => handleChange('vss_alpha', e.target.value ? parseFloat(e.target.value) : undefined)}
+                      fullWidth
+                      inputProps={{ step: 'any' }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="分子直径 (diam)"
+                      type="number"
+                      value={formData.diam || ''}
+                      onChange={(e) => handleChange('diam', e.target.value ? parseFloat(e.target.value) : undefined)}
+                      fullWidth
+                      inputProps={{ step: 'any' }}
+                      helperText="直径 (m)"
+                    />
+                  </Grid>
+                </Grid>
+              </AccordionDetails>
+            </Accordion>
+          </Grid>
+        )}
+
+        {formData.type === 'boltzmann_electrons' && (
+          <Grid item xs={12}>
+            <Accordion>
+              <AccordionSummary expandIcon={<ExpandMore />}>
+                <Typography variant="h6">玻尔兹曼电子属性</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="模型类型 (model)"
+                      value={formData.model || ''}
+                      onChange={(e) => handleChange('model', e.target.value || undefined)}
+                      fullWidth
+                      helperText="通常为 'qn'"
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="电子温度 (kTe0)"
+                      type="number"
+                      value={formData.kTe0 || ''}
+                      onChange={(e) => handleChange('kTe0', e.target.value ? parseFloat(e.target.value) : undefined)}
+                      fullWidth
+                      inputProps={{ step: 'any' }}
+                      helperText="电子温度 (eV)"
+                    />
+                  </Grid>
+                </Grid>
+              </AccordionDetails>
+            </Accordion>
+          </Grid>
+        )}
+
+        {formData.type === 'solid' && (
+          <Grid item xs={12}>
+            <Accordion>
+              <AccordionSummary expandIcon={<ExpandMore />}>
+                <Typography variant="h6">固体材料属性</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="密度 (density)"
+                      type="number"
+                      value={formData.density || ''}
+                      onChange={(e) => handleChange('density', e.target.value ? parseFloat(e.target.value) : undefined)}
+                      fullWidth
+                      inputProps={{ step: 'any' }}
+                      helperText="密度 (kg/m³)"
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
                   <TextField
                     label="粘度温度指数 (visc_temp_index)"
                     type="number"
@@ -320,7 +447,7 @@ const MaterialForm: React.FC<MaterialFormProps> = ({
                 </Grid>
 
                 {/* 固体材料特有属性 */}
-                {(formData.type === 'SOLID' || formData.type === 'LIQUID') && (
+                {formData.type === 'solid' && (
                   <>
                     <Grid item xs={12} sm={6}>
                       <TextField
@@ -382,6 +509,7 @@ const MaterialForm: React.FC<MaterialFormProps> = ({
             </AccordionDetails>
           </Accordion>
         </Grid>
+        )}
       </Grid>
 
       {/* 操作按钮 */}

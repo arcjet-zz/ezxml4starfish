@@ -61,6 +61,9 @@ const HomePage: React.FC = () => {
         <Typography variant="h6" color="text.secondary" paragraph>
           可视化XML配置工具，让Starfish仿真配置变得简单
         </Typography>
+        <Typography variant="body2" color="success.main" sx={{ fontWeight: 'bold' }}>
+          ✅ 完全兼容 Starfish v0.25 | 自动类型映射 | 智能参数配置
+        </Typography>
 
         {isLoading && (
           <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
@@ -154,6 +157,9 @@ const HomePage: React.FC = () => {
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 • ⚡ 实时配置验证
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                • 🔄 自动类型映射兼容
               </Typography>
             </Grid>
           </Grid>

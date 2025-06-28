@@ -46,7 +46,7 @@ const createDefaultProject = (): SimulationProject => ({
   settings: {
     iterations: 1000,
     time_step: 1e-6,
-    solver_type: 'SOR'
+    solver_type: 'poisson'  // 修复：使用Starfish支持的求解器类型
   },
   domain: {
     type: 'xy',

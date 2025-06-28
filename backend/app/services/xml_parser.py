@@ -186,7 +186,7 @@ class XMLParserService:
         return domain_settings
     
     def _parse_boundaries(self, root: ET.Element) -> List[Dict[str, Any]]:
-        """解析边界定义"""
+        """解析边界定义 - 符合Starfish XML规范"""
         boundaries = []
 
         for boundary_elem in root.findall("boundary"):
@@ -194,33 +194,50 @@ class XMLParserService:
             boundary = {
                 "id": boundary_name,
                 "name": boundary_name,
-                "type": boundary_elem.get("type", "SOLID").upper(),
-                "potential": float(boundary_elem.get("potential", "0.0")),
+                "type": boundary_elem.get("type", "solid"),  # 直接使用Starfish类型
                 "nodes": []
             }
 
-            # 解析节点坐标
-            nodes_elem = boundary_elem.find("nodes")
-            if nodes_elem is not None:
-                # 解析节点列表
-                for node_elem in nodes_elem.findall("node"):
-                    x = float(node_elem.get("x", "0.0"))
-                    y = float(node_elem.get("y", "0.0"))
-                    boundary["nodes"].append({"x": x, "y": y})
+            # 解析value属性
+            value = boundary_elem.get("value")
+            if value is not None:
+                boundary["value"] = value
 
-                # 如果没有子节点，尝试解析文本内容
-                if not boundary["nodes"] and nodes_elem.text:
-                    # 解析格式如 "0,0 1,0 1,1 0,1" 的节点坐标
-                    node_pairs = nodes_elem.text.strip().split()
-                    for pair in node_pairs:
-                        if "," in pair:
-                            x, y = pair.split(",")
-                            boundary["nodes"].append({
-                                "x": float(x.strip()),
-                                "y": float(y.strip())
-                            })
+            # 解析reverse属性
+            reverse = boundary_elem.get("reverse")
+            if reverse is not None:
+                boundary["reverse"] = reverse.lower() == "true"
 
-            # 如果仍然没有节点，创建默认的矩形边界
+            # 解析材料
+            material_elem = boundary_elem.find("material")
+            if material_elem is not None and material_elem.text:
+                boundary["material"] = material_elem.text.strip()
+
+            # 解析路径
+            path_elem = boundary_elem.find("path")
+            if path_elem is not None and path_elem.text:
+                boundary["path"] = path_elem.text.strip()
+
+            # 解析温度
+            temp_elem = boundary_elem.find("temp")
+            if temp_elem is not None and temp_elem.text:
+                boundary["temp"] = float(temp_elem.text.strip())
+
+            temperature_elem = boundary_elem.find("temperature")
+            if temperature_elem is not None and temperature_elem.text:
+                boundary["temperature"] = float(temperature_elem.text.strip())
+
+            # 解析点定义
+            for point_elem in boundary_elem.findall("point"):
+                if point_elem.text:
+                    coords = point_elem.text.strip().split(",")
+                    if len(coords) >= 2:
+                        boundary["nodes"].append({
+                            "x": float(coords[0].strip()),
+                            "y": float(coords[1].strip())
+                        })
+
+            # 如果没有节点，创建默认边界
             if not boundary["nodes"]:
                 boundary["nodes"] = [
                     {"x": 0.0, "y": 0.0},
@@ -234,43 +251,74 @@ class XMLParserService:
         return boundaries
     
     def _parse_materials(self, root: ET.Element) -> List[Dict[str, Any]]:
-        """解析材料定义"""
+        """解析材料定义 - 符合Starfish XML规范"""
         materials = []
 
         for material_elem in root.findall("material"):
             material_name = material_elem.get("name", f"material_{len(materials)}")
+            material_type = material_elem.get("type", "kinetic")
+
             material = {
                 "id": material_name,
                 "name": material_name,
-                "type": material_elem.get("type", "GAS").upper(),
-                "mass": float(material_elem.get("mass", "1.0")),
-                "charge": float(material_elem.get("charge", "0.0"))
+                "type": material_type,  # 直接使用Starfish类型
+                "charge": 0.0  # 默认值
             }
 
-            # 解析扩展属性
+            # 解析基本属性
             molwt_elem = material_elem.find("molwt")
             if molwt_elem is not None and molwt_elem.text:
                 material["molwt"] = float(molwt_elem.text.strip())
 
-            spwt_elem = material_elem.find("spwt")
-            if spwt_elem is not None and spwt_elem.text:
-                material["spwt"] = float(spwt_elem.text.strip())
+            mass_elem = material_elem.find("mass")
+            if mass_elem is not None and mass_elem.text:
+                material["mass"] = float(mass_elem.text.strip())
 
-            ref_temp_elem = material_elem.find("ref_temp")
-            if ref_temp_elem is not None and ref_temp_elem.text:
-                material["ref_temp"] = float(ref_temp_elem.text.strip())
+            charge_elem = material_elem.find("charge")
+            if charge_elem is not None and charge_elem.text:
+                material["charge"] = float(charge_elem.text.strip())
 
-            visc_temp_index_elem = material_elem.find("visc_temp_index")
-            if visc_temp_index_elem is not None and visc_temp_index_elem.text:
-                material["visc_temp_index"] = float(visc_temp_index_elem.text.strip())
+            # 动力学材料属性
+            if material_type == "kinetic":
+                spwt_elem = material_elem.find("spwt")
+                if spwt_elem is not None and spwt_elem.text:
+                    material["spwt"] = float(spwt_elem.text.strip())
 
-            vss_alpha_elem = material_elem.find("vss_alpha")
-            if vss_alpha_elem is not None and vss_alpha_elem.text:
-                material["vss_alpha"] = float(vss_alpha_elem.text.strip())
+                init_elem = material_elem.find("init")
+                if init_elem is not None and init_elem.text:
+                    material["init"] = init_elem.text.strip()
 
-            diam_elem = material_elem.find("diam")
-            if diam_elem is not None and diam_elem.text:
-                material["diam"] = float(diam_elem.text.strip())
+                ref_temp_elem = material_elem.find("ref_temp")
+                if ref_temp_elem is not None and ref_temp_elem.text:
+                    material["ref_temp"] = float(ref_temp_elem.text.strip())
+
+                visc_temp_index_elem = material_elem.find("visc_temp_index")
+                if visc_temp_index_elem is not None and visc_temp_index_elem.text:
+                    material["visc_temp_index"] = float(visc_temp_index_elem.text.strip())
+
+                vss_alpha_elem = material_elem.find("vss_alpha")
+                if vss_alpha_elem is not None and vss_alpha_elem.text:
+                    material["vss_alpha"] = float(vss_alpha_elem.text.strip())
+
+                diam_elem = material_elem.find("diam")
+                if diam_elem is not None and diam_elem.text:
+                    material["diam"] = float(diam_elem.text.strip())
+
+            # 玻尔兹曼电子属性
+            elif material_type == "boltzmann_electrons":
+                model_elem = material_elem.find("model")
+                if model_elem is not None and model_elem.text:
+                    material["model"] = model_elem.text.strip()
+
+                kTe0_elem = material_elem.find("kTe0")
+                if kTe0_elem is not None and kTe0_elem.text:
+                    material["kTe0"] = float(kTe0_elem.text.strip())
+
+            # 固体材料属性
+            elif material_type == "solid":
+                density_elem = material_elem.find("density")
+                if density_elem is not None and density_elem.text:
+                    material["density"] = float(density_elem.text.strip())
 
             materials.append(material)
 
