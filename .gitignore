@@ -5,6 +5,9 @@
 *.md
 !README.md
 
+# Local acceptance artifacts
+ACCEPTANCE_CHECKLIST.md
+
 # Python
 __pycache__/
 *.py[cod]
@@ -136,11 +139,6 @@ Thumbs.db
 *.bak
 *.old
 *~
-
-# Test files
-test_*
-*_test.*
-tests/
 
 # Docker
 .dockerignore

@@ -414,98 +414,49 @@ const MaterialForm: React.FC<MaterialFormProps> = ({
                   </Grid>
 
                   <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="粘度温度指数 (visc_temp_index)"
-                    type="number"
-                    value={formData.visc_temp_index || ''}
-                    onChange={(e) => handleChange('visc_temp_index', e.target.value ? parseFloat(e.target.value) : undefined)}
-                    fullWidth
-                    inputProps={{ step: 'any' }}
-                  />
+                    <TextField
+                      label="热导率 (thermal_conductivity)"
+                      type="number"
+                      value={formData.thermal_conductivity || ''}
+                      onChange={(e) => handleChange('thermal_conductivity', e.target.value ? parseFloat(e.target.value) : undefined)}
+                      fullWidth
+                      inputProps={{ step: 'any' }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="比热容 (specific_heat)"
+                      type="number"
+                      value={formData.specific_heat || ''}
+                      onChange={(e) => handleChange('specific_heat', e.target.value ? parseFloat(e.target.value) : undefined)}
+                      fullWidth
+                      inputProps={{ step: 'any' }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="功函数 (work_function)"
+                      type="number"
+                      value={formData.work_function || ''}
+                      onChange={(e) => handleChange('work_function', e.target.value ? parseFloat(e.target.value) : undefined)}
+                      fullWidth
+                      inputProps={{ step: 'any' }}
+                    />
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="二次电子发射系数 (secondary_emission_yield)"
+                      type="number"
+                      value={formData.secondary_emission_yield || ''}
+                      onChange={(e) => handleChange('secondary_emission_yield', e.target.value ? parseFloat(e.target.value) : undefined)}
+                      fullWidth
+                      inputProps={{ step: 'any' }}
+                    />
+                  </Grid>
                 </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="VSS Alpha参数 (vss_alpha)"
-                    type="number"
-                    value={formData.vss_alpha || ''}
-                    onChange={(e) => handleChange('vss_alpha', e.target.value ? parseFloat(e.target.value) : undefined)}
-                    fullWidth
-                    inputProps={{ step: 'any' }}
-                  />
-                </Grid>
-
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    label="直径 (diam)"
-                    type="number"
-                    value={formData.diam || ''}
-                    onChange={(e) => handleChange('diam', e.target.value ? parseFloat(e.target.value) : undefined)}
-                    fullWidth
-                    inputProps={{ step: 'any' }}
-                  />
-                </Grid>
-
-                {/* 固体材料特有属性 */}
-                {formData.type === 'solid' && (
-                  <>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="密度 (density)"
-                        type="number"
-                        value={formData.density || ''}
-                        onChange={(e) => handleChange('density', e.target.value ? parseFloat(e.target.value) : undefined)}
-                        fullWidth
-                        inputProps={{ step: 'any' }}
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="热导率 (thermal_conductivity)"
-                        type="number"
-                        value={formData.thermal_conductivity || ''}
-                        onChange={(e) => handleChange('thermal_conductivity', e.target.value ? parseFloat(e.target.value) : undefined)}
-                        fullWidth
-                        inputProps={{ step: 'any' }}
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="比热容 (specific_heat)"
-                        type="number"
-                        value={formData.specific_heat || ''}
-                        onChange={(e) => handleChange('specific_heat', e.target.value ? parseFloat(e.target.value) : undefined)}
-                        fullWidth
-                        inputProps={{ step: 'any' }}
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="功函数 (work_function)"
-                        type="number"
-                        value={formData.work_function || ''}
-                        onChange={(e) => handleChange('work_function', e.target.value ? parseFloat(e.target.value) : undefined)}
-                        fullWidth
-                        inputProps={{ step: 'any' }}
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        label="二次电子发射系数 (secondary_emission_yield)"
-                        type="number"
-                        value={formData.secondary_emission_yield || ''}
-                        onChange={(e) => handleChange('secondary_emission_yield', e.target.value ? parseFloat(e.target.value) : undefined)}
-                        fullWidth
-                        inputProps={{ step: 'any' }}
-                      />
-                    </Grid>
-                  </>
-                )}
-              </Grid>
             </AccordionDetails>
           </Accordion>
         </Grid>

@@ -9,12 +9,11 @@ import {
   Grid,
   Typography,
   Button,
-  Chip,
-  OutlinedInput,
-  SelectChangeEvent,
   FormHelperText,
   FormControlLabel,
-  Switch
+  Switch,
+  Checkbox,
+  FormGroup
 } from '@mui/material';
 import { Interaction, Material } from '../../types';
 
@@ -118,9 +117,11 @@ const InteractionForm: React.FC<InteractionFormProps> = ({
     }
   };
 
-  const handleMaterialsChange = (event: SelectChangeEvent<string[]>) => {
-    const value = event.target.value;
-    handleChange('materials', typeof value === 'string' ? value.split(',') : value);
+  const handleMaterialToggle = (materialName: string, checked: boolean) => {
+    const nextMaterials = checked
+      ? [...formData.materials, materialName]
+      : formData.materials.filter(name => name !== materialName);
+    handleChange('materials', nextMaterials);
   };
 
   const validateForm = () => {
@@ -199,31 +200,26 @@ const InteractionForm: React.FC<InteractionFormProps> = ({
 
         <Grid item xs={12}>
           <FormControl fullWidth required error={!!errors.materials}>
-            <InputLabel>参与材料</InputLabel>
-            <Select
-              multiple
-              value={formData.materials}
-              onChange={handleMaterialsChange}
-              input={<OutlinedInput label="参与材料" />}
-              renderValue={(selected) => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selected.map((value) => (
-                    <Chip key={value} label={value} size="small" />
-                  ))}
-                </Box>
-              )}
-            >
+            <Typography variant="subtitle2" gutterBottom>
+              参与材料
+            </Typography>
+            <FormGroup row>
               {availableMaterials.map((materialName) => (
-                <MenuItem key={materialName} value={materialName}>
-                  {materialName}
-                </MenuItem>
+                <FormControlLabel
+                  key={materialName}
+                  control={
+                    <Checkbox
+                      checked={formData.materials.includes(materialName)}
+                      onChange={(e) => handleMaterialToggle(materialName, e.target.checked)}
+                    />
+                  }
+                  label={materialName}
+                />
               ))}
-            </Select>
-            {errors.materials && (
-              <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>
-                {errors.materials}
-              </Typography>
-            )}
+            </FormGroup>
+            <FormHelperText>
+              {errors.materials || (availableMaterials.length < 2 ? '请先在材料管理中添加至少两种材料' : '至少选择两种材料')}
+            </FormHelperText>
           </FormControl>
         </Grid>
 

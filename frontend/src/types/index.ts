@@ -8,7 +8,7 @@ export interface GeometryNode {
 export interface Boundary {
   id: string;
   name: string;
-  type: 'solid' | 'virtual';
+  type: 'solid' | 'virtual' | 'dirichlet' | 'neumann';
   value?: string;
   reverse?: boolean;
   nodes: GeometryNode[];

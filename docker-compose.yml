@@ -1,20 +1,14 @@
-version: '3.8'
-
 services:
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: ezxml-backend
-    # 生产环境不暴露后端端口，只通过前端nginx代理访问
-    # ports:
-    #   - "8000:8000"
+    ports:
+      - "8000:8000"
     environment:
       - PYTHONPATH=/app
-      - ENVIRONMENT=production
-    # 生产环境不挂载源码目录，使用容器内的代码
-    # volumes:
-    #   - ./backend:/app
+      - ENVIRONMENT=development
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -34,7 +28,6 @@ services:
       backend:
         condition: service_healthy
     restart: unless-stopped
-    # 可选：挂载nginx配置文件以便动态修改
     volumes:
       - ./frontend/nginx.conf:/etc/nginx/conf.d/default.conf:ro
     healthcheck:
@@ -44,13 +37,6 @@ services:
       retries: 3
       start_period: 40s
 
-# 注释掉原有的网络创建配置，使用现有网络
-# networks:
-#   default:
-#     name: ezxml-network
-
-# 使用现有的mynetwork网络
 networks:
   default:
-    external: true
-    name: mynetwork
+    name: ezxml-network

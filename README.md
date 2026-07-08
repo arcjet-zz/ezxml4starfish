@@ -37,7 +37,7 @@ chmod +x start.sh
 
 ```bash
 # Start all services
-docker-compose up -d
+docker compose up --build
 
 # Access the application
 # Frontend: http://localhost:3000
@@ -59,15 +59,20 @@ deploy.bat start
 - Frontend: http://localhost:3000
 - API Documentation: http://localhost:3000/api/v1/docs
 
-📖 **详细部署指南**: [DEPLOYMENT.md](./DEPLOYMENT.md) | [快速部署](./QUICK_DEPLOY.md)
-
 ### Option 4: Manual Setup
 
 **Backend:**
 ```bash
 cd backend
-pip install -r requirements.txt
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+python -m venv .venv
+
+# Windows
+.venv\Scripts\python -m pip install -r requirements.txt
+.venv\Scripts\python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Linux/macOS
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 **Frontend:**
@@ -75,6 +80,18 @@ uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 cd frontend
 npm install
 npm start
+```
+
+**Checks:**
+```bash
+# Backend tests
+cd backend
+pytest
+
+# Frontend type check and production build
+cd frontend
+npm run typecheck
+npm run build
 ```
 
 ## Project Structure
@@ -88,6 +105,7 @@ ezxml/
 │   │   ├── api/            # API routes
 │   │   ├── services/       # Business logic services
 │   │   └── utils/          # Utility functions
+│   ├── tests/              # Backend regression tests
 │   └── requirements.txt    # Python dependencies
 ├── frontend/               # React frontend application
 │   ├── src/

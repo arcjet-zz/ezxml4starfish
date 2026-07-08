@@ -1,58 +1,45 @@
-#!/bin/bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BACKEND_DIR="$ROOT/backend"
+FRONTEND_DIR="$ROOT/frontend"
 
 echo "Starting Starfish-ezxml Development Environment"
 echo "============================================="
 
-# 检查Python和Node.js
-if ! command -v python3 &> /dev/null; then
-    echo "Error: Python3 is not installed"
-    exit 1
+command -v python3 >/dev/null 2>&1 || {
+  echo "Error: python3 is not installed or not on PATH"
+  exit 1
+}
+
+command -v npm >/dev/null 2>&1 || {
+  echo "Error: Node.js/npm is not installed or not on PATH"
+  exit 1
+}
+
+cd "$BACKEND_DIR"
+if [ ! -x ".venv/bin/python" ]; then
+  echo "Creating backend virtual environment..."
+  python3 -m venv .venv
 fi
 
-if ! command -v npm &> /dev/null; then
-    echo "Error: Node.js/npm is not installed"
-    exit 1
-fi
+echo "Installing backend dependencies..."
+.venv/bin/python -m pip install -r requirements.txt
 
-echo ""
 echo "Starting Backend (FastAPI)..."
-cd backend
-
-# 检查虚拟环境
-if [ ! -d "venv" ]; then
-    echo "Creating virtual environment..."
-    python3 -m venv venv
-fi
-
-# 激活虚拟环境
-source venv/bin/activate
-
-# 安装依赖
-if [ ! -f "venv/installed" ]; then
-    echo "Installing Python dependencies..."
-    pip install -r requirements.txt
-    touch venv/installed
-fi
-
-# 启动后端
-python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 &
+.venv/bin/python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 &
 BACKEND_PID=$!
 
-echo ""
-echo "Waiting for backend to start..."
 sleep 3
 
-echo ""
-echo "Starting Frontend (React)..."
-cd ../frontend
-
-# 安装依赖
+cd "$FRONTEND_DIR"
 if [ ! -d "node_modules" ]; then
-    echo "Installing Node.js dependencies..."
-    npm install
+  echo "Installing frontend dependencies..."
+  npm install
 fi
 
-# 启动前端
+echo "Starting Frontend (React)..."
 npm start &
 FRONTEND_PID=$!
 
@@ -66,6 +53,10 @@ echo "============================================="
 echo ""
 echo "Press Ctrl+C to stop all services"
 
-# 等待用户中断
-trap "echo 'Stopping services...'; kill $BACKEND_PID $FRONTEND_PID; exit" INT
+cleanup() {
+  echo "Stopping services..."
+  kill "$BACKEND_PID" "$FRONTEND_PID" 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+
 wait

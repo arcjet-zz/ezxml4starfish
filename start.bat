@@ -1,34 +1,49 @@
 @echo off
+setlocal
+
+set "ROOT=%~dp0"
+set "BACKEND_DIR=%ROOT%backend"
+set "FRONTEND_DIR=%ROOT%frontend"
+
 echo Starting Starfish-ezxml Development Environment
 echo =============================================
 
-echo.
-echo Checking dependencies...
-
-echo.
-echo Installing Python dependencies...
-cd backend
-pip install -r requirements.txt
-
-echo.
-echo Starting Backend (FastAPI)...
-start "Backend" cmd /k "python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000"
-
-echo.
-echo Waiting for backend to start...
-timeout /t 5 /nobreak > nul
-
-echo.
-echo Checking Node.js dependencies...
-cd ..\frontend
-if not exist "node_modules" (
-    echo Installing Node.js dependencies...
-    npm install
+where python >nul 2>nul
+if errorlevel 1 (
+    echo Error: Python is not installed or not on PATH.
+    exit /b 1
 )
 
-echo.
+where npm >nul 2>nul
+if errorlevel 1 (
+    echo Error: Node.js/npm is not installed or not on PATH.
+    exit /b 1
+)
+
+if not exist "%BACKEND_DIR%\.venv\Scripts\python.exe" (
+    echo Creating backend virtual environment...
+    python -m venv "%BACKEND_DIR%\.venv"
+    if errorlevel 1 exit /b 1
+)
+
+echo Installing backend dependencies...
+"%BACKEND_DIR%\.venv\Scripts\python.exe" -m pip install -r "%BACKEND_DIR%\requirements.txt"
+if errorlevel 1 exit /b 1
+
+if not exist "%FRONTEND_DIR%\node_modules" (
+    echo Installing frontend dependencies...
+    npm --prefix "%FRONTEND_DIR%" install
+    if errorlevel 1 exit /b 1
+)
+
+echo Starting Backend (FastAPI)...
+start "EzXML Backend" /D "%BACKEND_DIR%" cmd /k ".venv\Scripts\python.exe -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000"
+
+echo Waiting for backend to start...
+timeout /t 3 /nobreak > nul
+
 echo Starting Frontend (React)...
-start "Frontend" cmd /k "npm start"
+start "EzXML Frontend" /D "%FRONTEND_DIR%" cmd /k "npm start"
 
 echo.
 echo =============================================
@@ -38,8 +53,5 @@ echo - Frontend App: http://localhost:3000
 echo - API Docs: http://localhost:8000/docs
 echo =============================================
 echo.
-echo Both services are starting in separate windows.
-echo Close those windows to stop the services.
-echo.
-echo Press any key to exit this window...
-pause > nul
+echo Close the backend/frontend windows to stop the services.
+pause

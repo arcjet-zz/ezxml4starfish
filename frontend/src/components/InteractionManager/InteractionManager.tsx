@@ -64,14 +64,16 @@ const InteractionManager: React.FC = () => {
 
   const getInteractionTypeColor = (type: string) => {
     switch (type) {
-      case 'collision':
+      case 'surface_hit':
         return 'primary';
-      case 'ionization':
+      case 'dsmc':
         return 'secondary';
-      case 'excitation':
+      case 'mcc':
         return 'success';
-      case 'charge_exchange':
+      case 'chemistry':
         return 'warning';
+      case 'sputtering':
+        return 'info';
       default:
         return 'default';
     }
@@ -188,11 +190,11 @@ const InteractionManager: React.FC = () => {
           相互作用类型说明
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          • <strong>碰撞 (collision)</strong>: 粒子间的弹性或非弹性碰撞<br />
-          • <strong>电离 (ionization)</strong>: 中性粒子被电离成离子和电子 → 映射为elastic<br />
-          • <strong>激发 (excitation)</strong>: 粒子的能级跃迁 → 映射为elastic<br />
-          • <strong>电荷交换 (charge_exchange)</strong>: 离子与中性粒子间的电荷转移 → 映射为elastic<br />
-          <strong>注意</strong>: Starfish只支持elastic和inelastic模型，其他类型会自动映射。
+          • <strong>表面碰撞 (surface_hit)</strong>: 粒子与壁面或固体材料的相互作用<br />
+          • <strong>DSMC碰撞 (dsmc)</strong>: 粒子间弹性或非弹性碰撞<br />
+          • <strong>MCC碰撞 (mcc)</strong>: 电荷交换、动量交换和电离过程<br />
+          • <strong>化学反应 (chemistry)</strong>: 反应物、产物和反应速率配置<br />
+          • <strong>溅射 (sputtering)</strong>: 表面溅射过程
         </Typography>
       </Box>
     </Box>

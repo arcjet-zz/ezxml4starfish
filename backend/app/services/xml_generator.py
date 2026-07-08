@@ -340,7 +340,7 @@ class XMLGeneratorService:
             path_elem.text = path_value
 
             # 添加温度（优先使用temp，然后是temperature）
-            temp_value = boundary.temp or boundary.temperature
+            temp_value = boundary.temp if boundary.temp is not None else boundary.temperature
             if temp_value is not None:
                 temp_elem = ET.SubElement(boundary_elem, "temp")
                 if temp_value == int(temp_value):
@@ -596,6 +596,28 @@ class XMLGeneratorService:
         root = ET.Element("sources")
 
         for source in sources:
+            if source.type in ["volume", "preload", "maxwellian"]:
+                source_elem = ET.SubElement(root, "volume_source")
+                source_elem.set("name", source.name)
+                source_elem.set("type", source.type)
+
+                if source.material:
+                    material = ET.SubElement(source_elem, "material")
+                    material.text = source.material
+
+                if source.rate is not None:
+                    rate = ET.SubElement(source_elem, "rate")
+                    rate.text = str(source.rate)
+
+                if source.temperature is not None:
+                    temperature = ET.SubElement(source_elem, "temperature")
+                    temperature.text = str(source.temperature)
+
+                if source.region:
+                    self._append_region(source_elem, source.region)
+
+                continue
+
             # 基于Starfish v0.25的实际支持，所有源都使用 <boundary_source> 标签
             # 但根据原始类型使用不同的参数配置
             source_elem = ET.SubElement(root, "boundary_source")
@@ -716,6 +738,23 @@ class XMLGeneratorService:
 
 
         return self._prettify_xml(root)
+
+    def _append_region(self, source_elem: ET.Element, region: str) -> None:
+        """Append a source region while preserving parsed region XML when available."""
+        region_text = region.strip()
+        if not region_text:
+            return
+
+        try:
+            parsed_region = ET.fromstring(region_text)
+            if parsed_region.tag == "region":
+                source_elem.append(parsed_region)
+                return
+        except ET.ParseError:
+            pass
+
+        region_elem = ET.SubElement(source_elem, "region")
+        region_elem.text = region_text
 
     def _find_available_boundary_for_volume_source(self, source: Source, project: 'SimulationProject') -> str:
         """为体积源找到一个可用的边界"""
@@ -1338,7 +1377,7 @@ class XMLGeneratorService:
             )
 
         # 如果是固体材料，添加密度
-        if material_type == "SOLID":
+        if material_type == "solid":
             default_material.density = 8000.0  # 默认密度
 
         logger.info(f"Created default material: {material_name} (type: {material_type}, charge: {charge})")
@@ -1396,11 +1435,13 @@ class XMLGeneratorService:
 
             # PIC求解器（通常不需要显式求解器配置）
             "PIC": "poisson",  # PIC通常需要泊松求解器求解电势
-            "DSMC": "dsmc",    # 虽然通常不生成solver元素，但保留映射
+            "DSMC": "none",    # DSMC projects normally do not need a solver element
 
             # 已经是正确的类型
             "poisson": "poisson",
-            "constant-ef": "constant-ef"
+            "constant-ef": "constant-ef",
+            "qn": "qn",
+            "none": "none"
         }
 
         mapped_type = type_mapping.get(solver_type.upper(), "poisson")  # 默认为poisson

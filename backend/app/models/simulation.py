@@ -3,7 +3,7 @@
 使用Pydantic定义核心数据结构
 """
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from typing import List, Optional, Literal, Union
 from uuid import uuid4
 
@@ -30,7 +30,7 @@ class Boundary(BaseModel):
     # 兼容性属性（用于向后兼容）
     potential: Optional[float] = Field(None, description="电势（将映射到value）")
 
-    @validator('value', pre=True)
+    @field_validator('value', mode='before')
     def convert_value_to_string(cls, v):
         """将数字值转换为字符串"""
         if v is not None:
@@ -154,6 +154,8 @@ class OutputSettings(BaseModel):
 
 class GlobalSettings(BaseModel):
     """全局设置 - 符合Starfish XML规范"""
+    model_config = ConfigDict(populate_by_name=True)
+
     # 时间参数
     iterations: int = Field(default=1000, alias="num_it", description="迭代次数")
     time_step: float = Field(default=1e-6, alias="dt", description="时间步长")
@@ -230,7 +232,4 @@ class SimulationProject(BaseModel):
     sources: List[Source] = Field(default_factory=list, description="源列表")
     interactions: List[Interaction] = Field(default_factory=list, description="相互作用列表")
     
-    class Config:
-        """Pydantic配置"""
-        populate_by_name = True
-        use_enum_values = True
+    model_config = ConfigDict(populate_by_name=True, use_enum_values=True)

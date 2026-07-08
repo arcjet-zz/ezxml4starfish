@@ -65,12 +65,12 @@ const MaterialManager: React.FC = () => {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'GAS':
+      case 'kinetic':
         return 'primary';
-      case 'PLASMA-ELECTRON':
+      case 'boltzmann_electrons':
         return 'secondary';
-      case 'PLASMA-ION':
-        return 'success';
+      case 'solid':
+        return 'warning';
       default:
         return 'default';
     }

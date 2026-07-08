@@ -92,6 +92,8 @@ const BoundaryPropertiesPanel: React.FC<BoundaryPropertiesPanelProps> = ({
             >
               <MenuItem value="solid">固体边界 (solid)</MenuItem>
               <MenuItem value="virtual">虚拟边界 (virtual)</MenuItem>
+              <MenuItem value="dirichlet">Dirichlet边界 (dirichlet)</MenuItem>
+              <MenuItem value="neumann">Neumann边界 (neumann)</MenuItem>
             </Select>
             <FormHelperText>
               选择符合Starfish规范的边界类型
@@ -152,7 +154,7 @@ const BoundaryPropertiesPanel: React.FC<BoundaryPropertiesPanelProps> = ({
           <TextField
             label="温度 (K)"
             type="number"
-            value={localBoundary.temp || localBoundary.temperature || ''}
+            value={localBoundary.temp ?? localBoundary.temperature ?? ''}
             onChange={(e) => handleChange('temp', e.target.value ? parseFloat(e.target.value) : undefined)}
             fullWidth
             size="small"

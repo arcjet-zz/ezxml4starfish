@@ -121,11 +121,11 @@ const SourceManager: React.FC = () => {
                 </TableCell>
                 <TableCell>{source.material || '-'}</TableCell>
                 <TableCell>
-                  {source.rate ? `${source.rate}` : ''}
-                  {source.mdot ? `${source.mdot} (mdot)` : ''}
-                  {!source.rate && !source.mdot ? '-' : ''}
+                  {source.rate !== undefined ? `${source.rate}` : ''}
+                  {source.mdot !== undefined ? `${source.mdot} (mdot)` : ''}
+                  {source.rate === undefined && source.mdot === undefined ? '-' : ''}
                 </TableCell>
-                <TableCell>{source.temperature || '-'}</TableCell>
+                <TableCell>{source.temperature !== undefined ? source.temperature : '-'}</TableCell>
                 <TableCell>{source.boundary || '-'}</TableCell>
                 <TableCell>
                   <IconButton

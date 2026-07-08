@@ -5,11 +5,11 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem,
   Grid,
   Typography,
   Button,
-  Divider
+  Divider,
+  FormHelperText
 } from '@mui/material';
 import { Source, Material, Boundary } from '../../types';
 
@@ -137,7 +137,7 @@ const SourceForm: React.FC<SourceFormProps> = ({
     { value: 'volume', label: '体积源 (Volume)' },
     { value: 'preload', label: '预加载源 (Preload)' },
     { value: 'maxwellian', label: '麦克斯韦分布源 (Maxwellian)' },
-    // 边界源类型 - 注意：所有边界源都会映射为ambient类型
+    // 边界源类型
     { value: 'uniform', label: '均匀边界源 (Uniform) → ambient' },
     { value: 'cosine', label: '余弦边界源 (Cosine) → ambient' },
     { value: 'ambient', label: '环境源 (Ambient)' },
@@ -168,38 +168,44 @@ const SourceForm: React.FC<SourceFormProps> = ({
 
         <Grid item xs={12} sm={6}>
           <FormControl fullWidth required error={!!errors.type}>
-            <InputLabel>源类型</InputLabel>
+            <InputLabel htmlFor="source-type-select">源类型</InputLabel>
             <Select
+              native
               value={formData.type}
               label="源类型"
               onChange={(e) => handleChange('type', e.target.value)}
+              inputProps={{ id: 'source-type-select' }}
             >
               {sourceTypes.map((type) => (
-                <MenuItem key={type.value} value={type.value}>
+                <option key={type.value} value={type.value}>
                   {type.label}
-                </MenuItem>
+                </option>
               ))}
             </Select>
+            {errors.type && <FormHelperText>{errors.type}</FormHelperText>}
           </FormControl>
         </Grid>
 
         <Grid item xs={12} sm={6}>
-          <FormControl fullWidth>
-            <InputLabel>关联材料</InputLabel>
+          <FormControl fullWidth error={!!errors.material} required={isVolumeSource(formData.type)}>
+            <InputLabel htmlFor="source-material-select">关联材料</InputLabel>
             <Select
+              native
               value={formData.material}
               label="关联材料"
               onChange={(e) => handleChange('material', e.target.value)}
+              inputProps={{ id: 'source-material-select' }}
             >
-              <MenuItem value="">
-                <em>无</em>
-              </MenuItem>
+              <option value="">无</option>
               {materials.map((material) => (
-                <MenuItem key={material.id} value={material.name}>
+                <option key={material.id} value={material.name}>
                   {material.name} ({material.type})
-                </MenuItem>
+                </option>
               ))}
             </Select>
+            <FormHelperText>
+              {errors.material || (materials.length === 0 ? '请先在材料管理中添加材料' : '选择源关联的材料')}
+            </FormHelperText>
           </FormControl>
         </Grid>
 
@@ -262,21 +268,24 @@ const SourceForm: React.FC<SourceFormProps> = ({
 
             <Grid item xs={12} sm={6}>
               <FormControl fullWidth required={isBoundarySource(formData.type)} error={!!errors.boundary}>
-                <InputLabel>关联边界</InputLabel>
+                <InputLabel htmlFor="source-boundary-select">关联边界</InputLabel>
                 <Select
+                  native
                   value={formData.boundary || ''}
                   label="关联边界"
                   onChange={(e) => handleChange('boundary', e.target.value)}
+                  inputProps={{ id: 'source-boundary-select' }}
                 >
-                  <MenuItem value="">
-                    <em>请选择边界</em>
-                  </MenuItem>
+                  <option value="">请选择边界</option>
                   {boundaries.map((boundary) => (
-                    <MenuItem key={boundary.id} value={boundary.name}>
+                    <option key={boundary.id} value={boundary.name}>
                       {boundary.name} ({boundary.type})
-                    </MenuItem>
+                    </option>
                   ))}
                 </Select>
+                <FormHelperText>
+                  {errors.boundary || (boundaries.length === 0 ? '请先在几何绘制中添加边界' : '选择粒子发射的边界')}
+                </FormHelperText>
               </FormControl>
             </Grid>
 
@@ -309,16 +318,18 @@ const SourceForm: React.FC<SourceFormProps> = ({
               <>
                 <Grid item xs={12} sm={6}>
                   <FormControl fullWidth>
-                    <InputLabel>强制条件类型</InputLabel>
+                    <InputLabel htmlFor="source-enforce-select">强制条件类型</InputLabel>
                     <Select
+                      native
                       value={formData.enforce || ''}
                       label="强制条件类型"
                       onChange={(e) => handleChange('enforce', e.target.value)}
+                      inputProps={{ id: 'source-enforce-select' }}
                     >
-                      <MenuItem value="">无</MenuItem>
-                      <MenuItem value="density">密度 (density)</MenuItem>
-                      <MenuItem value="pressure">压力 (pressure)</MenuItem>
-                      <MenuItem value="partial_pressure">分压 (partial_pressure)</MenuItem>
+                      <option value="">无</option>
+                      <option value="density">密度 (density)</option>
+                      <option value="pressure">压力 (pressure)</option>
+                      <option value="partial_pressure">分压 (partial_pressure)</option>
                     </Select>
                   </FormControl>
                 </Grid>
@@ -367,13 +378,13 @@ const SourceForm: React.FC<SourceFormProps> = ({
           <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 1 }}>
             <Typography variant="caption" color="text.secondary">
               <strong>源类型说明：</strong><br />
-              • 体积源 (volume/preload/maxwellian)：在计算域内部生成粒子，使用 &lt;source&gt; 标签<br />
+              • 体积源 (volume/preload/maxwellian)：在计算域内部生成粒子，使用 &lt;volume_source&gt; 标签<br />
               • 边界源 (uniform/cosine/ambient/thermionic)：在边界上生成粒子，使用 &lt;boundary_source&gt; 标签<br />
               <br />
               <strong>Starfish XML映射：</strong><br />
               • 体积源：直接使用指定的type属性 (volume, preload, maxwellian)<br />
               • 边界源：所有类型都映射为 type="ambient"，通过不同参数实现不同行为<br />
-              • 已通过StarfishCLI.jar验证兼容性 ✓
+              • 导出后可使用 StarfishCLI.jar 做额外兼容性验证
             </Typography>
           </Box>
         </Grid>

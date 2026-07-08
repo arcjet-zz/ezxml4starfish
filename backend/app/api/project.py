@@ -2,7 +2,9 @@
 项目相关API端点
 """
 
-from fastapi import APIRouter, UploadFile, File, HTTPException, Form
+from pathlib import PurePath
+
+from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import StreamingResponse
 from typing import List, Dict
 import io
@@ -19,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-@router.post("/parse", response_model=SimulationProject)
+@router.post("/parse", response_model=SimulationProject, response_model_by_alias=False)
 async def parse_project(
     files: List[UploadFile] = File(...)
 ):
@@ -45,8 +47,11 @@ async def parse_project(
                 file_dict[file.filename] = file
                 logger.info(f"Processing file: {file.filename}")
 
-        # 验证必需的文件
-        if "starfish.xml" not in file_dict:
+        has_starfish_file = any(
+            PurePath(filename.replace("\\", "/")).name.lower() == "starfish.xml"
+            for filename in file_dict
+        )
+        if not has_starfish_file:
             raise HTTPException(
                 status_code=400,
                 detail="Missing required file: starfish.xml"
@@ -114,7 +119,7 @@ async def generate_project(project: SimulationProject):
             detail=f"Project generation error: {str(e)}"
         )
 
-@router.get("/template", response_model=SimulationProject)
+@router.get("/template", response_model=SimulationProject, response_model_by_alias=False)
 async def get_project_template():
     """
     获取项目模板
