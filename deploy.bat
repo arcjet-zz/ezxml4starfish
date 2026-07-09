@@ -6,7 +6,7 @@ REM 使用方法: deploy.bat [start|stop|restart|logs|status|cleanup]
 
 set PROJECT_NAME=ezxml4starfish
 set COMPOSE_FILE=docker-compose.prod.yml
-set NETWORK_NAME=mynetwork
+set NETWORK_NAME=ezxml-network
 
 REM 获取命令参数，默认为start
 set COMMAND=%1

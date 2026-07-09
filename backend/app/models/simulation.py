@@ -16,7 +16,7 @@ class Boundary(BaseModel):
     """边界定义 - 符合Starfish XML规范"""
     id: str = Field(default_factory=lambda: str(uuid4()), description="唯一ID")
     name: str = Field(..., description="边界名称")
-    type: Literal["solid", "virtual", "dirichlet", "neumann"] = Field(default="solid", description="边界类型")
+    type: Literal["solid", "virtual"] = Field(default="virtual", description="边界类型")
     value: Optional[Union[str, int, float]] = Field(None, description="边界值")
     reverse: Optional[bool] = Field(None, description="是否反转边界")
     nodes: List[GeometryNode] = Field(default_factory=list, description="边界节点")

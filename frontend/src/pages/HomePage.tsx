@@ -62,7 +62,7 @@ const HomePage: React.FC = () => {
           可视化XML配置工具，让Starfish仿真配置变得简单
         </Typography>
         <Typography variant="body2" color="success.main" sx={{ fontWeight: 'bold' }}>
-          ✅ 完全兼容 Starfish v0.25 | 自动类型映射 | 智能参数配置
+          Starfish v0.25 兼容导出 | 自动类型映射 | 智能参数配置
         </Typography>
 
         {isLoading && (

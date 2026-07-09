@@ -636,7 +636,11 @@ class XMLParserService:
 
     def _normalize_boundary_type(self, value: Optional[str]) -> str:
         raw = (value or "solid").strip().lower()
-        return raw if raw in {"solid", "virtual", "dirichlet", "neumann"} else "solid"
+        if raw in {"solid", "virtual"}:
+            return raw
+        if raw in {"dirichlet", "neumann"}:
+            return "virtual"
+        return "virtual"
 
     def _normalize_material_type(self, value: Optional[str]) -> str:
         raw = (value or "kinetic").strip().lower()

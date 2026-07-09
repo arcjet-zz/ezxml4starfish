@@ -118,17 +118,14 @@ class XMLGeneratorService:
                     method = ET.SubElement(solver, "method")
                     method.text = project.settings.method
 
-                if project.settings.n0 is not None:
-                    n0 = ET.SubElement(solver, "n0")
-                    n0.text = str(project.settings.n0)
+                n0 = ET.SubElement(solver, "n0")
+                n0.text = str(project.settings.n0 if project.settings.n0 is not None else 1e12)
 
-                if project.settings.Te0 is not None:
-                    te0 = ET.SubElement(solver, "Te0")
-                    te0.text = str(project.settings.Te0)
+                te0 = ET.SubElement(solver, "Te0")
+                te0.text = str(project.settings.Te0 if project.settings.Te0 is not None else 1.0)
 
-                if project.settings.phi0 is not None:
-                    phi0 = ET.SubElement(solver, "phi0")
-                    phi0.text = str(project.settings.phi0)
+                phi0 = ET.SubElement(solver, "phi0")
+                phi0.text = str(project.settings.phi0 if project.settings.phi0 is not None else 0.0)
 
                 if project.settings.max_it is not None:
                     max_it = ET.SubElement(solver, "max_it")
@@ -313,7 +310,7 @@ class XMLGeneratorService:
         for boundary in boundaries:
             boundary_elem = ET.SubElement(root, "boundary")
             boundary_elem.set("name", boundary.name)
-            boundary_elem.set("type", boundary.type)  # 直接使用Starfish类型
+            boundary_elem.set("type", self._map_boundary_type_to_starfish(boundary.type))
 
             # 添加value属性（优先使用value，然后是potential）
             value_attr = None
@@ -596,39 +593,18 @@ class XMLGeneratorService:
         root = ET.Element("sources")
 
         for source in sources:
-            if source.type in ["volume", "preload", "maxwellian"]:
-                source_elem = ET.SubElement(root, "volume_source")
-                source_elem.set("name", source.name)
-                source_elem.set("type", source.type)
-
-                if source.material:
-                    material = ET.SubElement(source_elem, "material")
-                    material.text = source.material
-
-                if source.rate is not None:
-                    rate = ET.SubElement(source_elem, "rate")
-                    rate.text = str(source.rate)
-
-                if source.temperature is not None:
-                    temperature = ET.SubElement(source_elem, "temperature")
-                    temperature.text = str(source.temperature)
-
-                if source.region:
-                    self._append_region(source_elem, source.region)
-
-                continue
-
             # 基于Starfish v0.25的实际支持，所有源都使用 <boundary_source> 标签
             # 但根据原始类型使用不同的参数配置
             source_elem = ET.SubElement(root, "boundary_source")
             source_elem.set("name", source.name)
+            starfish_source_type = self._map_source_type_to_starfish(source.type)
 
             if source.type in ["volume", "preload", "maxwellian"]:
                 # 体积源转换为ambient边界源
-                source_elem.set("type", "ambient")
+                source_elem.set("type", starfish_source_type)
 
                 # 为体积源找到一个边界
-                boundary_name = self._find_available_boundary_for_volume_source(source, project)
+                boundary_name = source.boundary or self._find_available_boundary_for_volume_source(source, project)
                 boundary = ET.SubElement(source_elem, "boundary")
                 boundary.text = boundary_name
 
@@ -649,31 +625,37 @@ class XMLGeneratorService:
                     temperature.text = str(source.temperature)
 
                 # 将rate转换为density
-                if source.rate is not None:
+                if source.density is not None:
+                    density = ET.SubElement(source_elem, "density")
+                    density.text = str(source.density)
+                elif source.rate is not None:
                     density = ET.SubElement(source_elem, "density")
                     # 简单的rate到density转换（这是一个近似）
                     density_value = source.rate / 1e15  # 简单的转换因子
                     density.text = str(max(density_value, 1e12))  # 最小密度值
+                else:
+                    density = ET.SubElement(source_elem, "density")
+                    density.text = "1e12"
 
             else:
                 # 边界源 - 设置类型和基本参数
-                source_elem.set("type", source.type)  # 使用原始类型
+                source_elem.set("type", starfish_source_type)
 
-                if source.boundary:
-                    boundary = ET.SubElement(source_elem, "boundary")
-                    boundary.text = source.boundary
+                boundary_name = source.boundary or self._find_available_boundary_for_volume_source(source, project)
+                boundary = ET.SubElement(source_elem, "boundary")
+                boundary.text = boundary_name
 
                 if source.material:
                     material = ET.SubElement(source_elem, "material")
                     material.text = source.material
 
                 # 根据边界源类型添加相应参数
-                if source.type == "ambient":
+                if starfish_source_type == "ambient":
                     # 环境源需要enforce、drift_velocity、temperature等
                     enforce = ET.SubElement(source_elem, "enforce")
                     if source.enforce:
                         enforce.text = source.enforce
-                    elif source.density is not None:
+                    elif source.density is not None or source.rate is not None:
                         enforce.text = "density"
                     else:
                         enforce.text = "pressure"
@@ -695,6 +677,9 @@ class XMLGeneratorService:
                     if source.density is not None:
                         density = ET.SubElement(source_elem, "density")
                         density.text = str(source.density)
+                    elif source.rate is not None:
+                        density = ET.SubElement(source_elem, "density")
+                        density.text = str(max(source.rate / 1e15, 1e12))
                     elif source.total_pressure is not None:
                         total_pressure = ET.SubElement(source_elem, "total_pressure")
                         total_pressure.text = str(source.total_pressure)
@@ -703,7 +688,7 @@ class XMLGeneratorService:
                         total_pressure = ET.SubElement(source_elem, "total_pressure")
                         total_pressure.text = "1000.0"
 
-                elif source.type in ["uniform", "cosine"]:
+                elif starfish_source_type in ["uniform", "cosine"]:
                     # uniform和cosine源的参数
                     if source.mdot is not None:
                         mdot = ET.SubElement(source_elem, "mdot")
@@ -725,19 +710,11 @@ class XMLGeneratorService:
                         # 提供默认漂移速度
                         v_drift.text = "0"
 
-                elif source.type == "thermionic":
-                    # 热离子发射源的参数
-                    if source.temperature is not None:
-                        temperature = ET.SubElement(source_elem, "temperature")
-                        temperature.text = str(source.temperature)
-
-                    # 热离子发射源可能需要其他特定参数
-
-
-
-
-
         return self._prettify_xml(root)
+
+    def _map_boundary_type_to_starfish(self, boundary_type: str) -> str:
+        """Map application boundary types to Starfish v0.25 geometry boundary types."""
+        return boundary_type if boundary_type in {"solid", "virtual"} else "virtual"
 
     def _append_region(self, source_elem: ET.Element, region: str) -> None:
         """Append a source region while preserving parsed region XML when available."""
@@ -775,11 +752,12 @@ class XMLGeneratorService:
 
     def _map_source_type_to_starfish(self, source_type: str) -> str:
         """将ezxml4starfish的源类型映射到Starfish支持的类型"""
-        # 基于错误信息，Starfish可能只支持ambient类型的边界源
-        # 所有边界源都映射为ambient类型
         type_mapping = {
-            "uniform": "ambient",
-            "cosine": "ambient",
+            "volume": "ambient",
+            "preload": "ambient",
+            "maxwellian": "ambient",
+            "uniform": "uniform",
+            "cosine": "cosine",
             "ambient": "ambient",
             "thermionic": "ambient",
             "boundary": "ambient",
@@ -1246,6 +1224,34 @@ class XMLGeneratorService:
         # 默认使用常数截面（最安全的选择）
         return "const"
 
+    def _get_or_create_default_solid_material(
+        self,
+        project: SimulationProject,
+        defined_materials: set,
+    ) -> str:
+        """Return a solid material name, creating a default wall material if needed."""
+        for material in project.materials:
+            if material.type == "solid":
+                return material.name
+
+        base_name = "wall"
+        material_name = base_name
+        suffix = 1
+        while material_name in defined_materials:
+            material_name = f"{base_name}_{suffix}"
+            suffix += 1
+
+        default_material = self._create_default_material(material_name)
+        default_material.type = "solid"
+        default_material.charge = 0.0
+        if default_material.density is None:
+            default_material.density = 8000.0
+
+        project.materials.append(default_material)
+        defined_materials.add(default_material.name)
+        logger.info(f"Created default solid material '{default_material.name}' for solid boundaries")
+        return default_material.name
+
     def _validate_and_fix_material_references(self, project: SimulationProject) -> None:
         """验证和修复材料引用"""
         # 收集所有已定义的材料名称
@@ -1257,6 +1263,12 @@ class XMLGeneratorService:
 
         # 检查边界中的材料引用
         for boundary in project.boundaries:
+            if boundary.type == "solid" and not boundary.material:
+                boundary.material = self._get_or_create_default_solid_material(project, defined_materials)
+                logger.info(
+                    f"Assigned default solid material '{boundary.material}' to boundary '{boundary.name}'"
+                )
+
             if boundary.material:
                 referenced_materials.add(boundary.material)
                 if boundary.material not in defined_materials:

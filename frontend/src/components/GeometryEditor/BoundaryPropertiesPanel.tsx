@@ -92,11 +92,9 @@ const BoundaryPropertiesPanel: React.FC<BoundaryPropertiesPanelProps> = ({
             >
               <MenuItem value="solid">固体边界 (solid)</MenuItem>
               <MenuItem value="virtual">虚拟边界 (virtual)</MenuItem>
-              <MenuItem value="dirichlet">Dirichlet边界 (dirichlet)</MenuItem>
-              <MenuItem value="neumann">Neumann边界 (neumann)</MenuItem>
             </Select>
             <FormHelperText>
-              选择符合Starfish规范的边界类型
+              Starfish v0.25 支持 solid 和 virtual；solid 导出时需要材料
             </FormHelperText>
           </FormControl>
 

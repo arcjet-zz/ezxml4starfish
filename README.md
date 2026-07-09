@@ -6,7 +6,7 @@ A visual XML configuration tool for Starfish simulation software.
 
 EzXML is a web-based application that provides an intuitive interface for creating and managing Starfish simulation configurations. It eliminates the need for manual XML editing by offering visual geometry drawing and form-based parameter configuration.
 
-**✅ Fully compatible with Starfish v0.25** - Features automatic type mapping and intelligent parameter configuration to ensure generated XML files work seamlessly with Starfish.
+**Targets Starfish v0.25-compatible export** - Uses tested type mapping and defensive defaults so generated XML can be validated with StarfishCLI.
 
 ## Features
 
@@ -84,15 +84,32 @@ npm start
 
 **Checks:**
 ```bash
-# Backend tests
+# Backend import check
 cd backend
-pytest
+python -B -c "import app.main; import tools.run_starfish_cases; import tools.run_ezxml_starfish_demo; import tools.run_starfish_scenario_suite"
 
 # Frontend type check and production build
 cd frontend
 npm run typecheck
 npm run build
 ```
+
+## Starfish CLI Runs
+
+To run generated XML with Starfish, place `StarfishCLI.jar` in the project root or set `STARFISH_JAR` to the jar path.
+
+```bash
+# Check Starfish environment and run edge compatibility projects
+python backend/tools/run_starfish_cases.py
+
+# Generate one ezxml demo project, run Starfish, and write a result summary
+python backend/tools/run_ezxml_starfish_demo.py --iterations 100 --timeout 60
+
+# Run several varied Starfish scenarios and write a suite summary
+python backend/tools/run_starfish_scenario_suite.py --timeout 60
+```
+
+Generated simulation outputs are written under `starfish_runs/` and are ignored by git.
 
 ## Project Structure
 
@@ -105,7 +122,7 @@ ezxml/
 │   │   ├── api/            # API routes
 │   │   ├── services/       # Business logic services
 │   │   └── utils/          # Utility functions
-│   ├── tests/              # Backend regression tests
+│   ├── tools/              # Starfish run and scenario scripts
 │   └── requirements.txt    # Python dependencies
 ├── frontend/               # React frontend application
 │   ├── src/
@@ -136,6 +153,7 @@ The backend API follows OpenAPI 3.0 specification. After starting the backend se
 2. **Draw Geometry**: Use the visual editor to define simulation boundaries
 3. **Configure Parameters**: Set up materials, sources, and global settings through forms
 4. **Export Project**: Generate a complete Starfish-ready project package
+5. **Run Starfish**: Use the backend tools to execute StarfishCLI and inspect generated logs/statistics
 
 ## Target Users
 

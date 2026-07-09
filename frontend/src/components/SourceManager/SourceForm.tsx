@@ -134,12 +134,12 @@ const SourceForm: React.FC<SourceFormProps> = ({
 
   const sourceTypes = [
     // 体积源类型
-    { value: 'volume', label: '体积源 (Volume)' },
-    { value: 'preload', label: '预加载源 (Preload)' },
-    { value: 'maxwellian', label: '麦克斯韦分布源 (Maxwellian)' },
+    { value: 'volume', label: '体积源预设 (Volume) → ambient' },
+    { value: 'preload', label: '预加载预设 (Preload) → ambient' },
+    { value: 'maxwellian', label: '麦克斯韦预设 (Maxwellian) → ambient' },
     // 边界源类型
-    { value: 'uniform', label: '均匀边界源 (Uniform) → ambient' },
-    { value: 'cosine', label: '余弦边界源 (Cosine) → ambient' },
+    { value: 'uniform', label: '均匀边界源 (Uniform)' },
+    { value: 'cosine', label: '余弦边界源 (Cosine)' },
     { value: 'ambient', label: '环境源 (Ambient)' },
     { value: 'thermionic', label: '热离子发射源 (Thermionic) → ambient' }
   ];
@@ -378,12 +378,12 @@ const SourceForm: React.FC<SourceFormProps> = ({
           <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 1 }}>
             <Typography variant="caption" color="text.secondary">
               <strong>源类型说明：</strong><br />
-              • 体积源 (volume/preload/maxwellian)：在计算域内部生成粒子，使用 &lt;volume_source&gt; 标签<br />
+              • 体积源预设 (volume/preload/maxwellian)：导出为 Starfish v0.25 可接受的 &lt;boundary_source type="ambient"&gt;<br />
               • 边界源 (uniform/cosine/ambient/thermionic)：在边界上生成粒子，使用 &lt;boundary_source&gt; 标签<br />
               <br />
               <strong>Starfish XML映射：</strong><br />
-              • 体积源：直接使用指定的type属性 (volume, preload, maxwellian)<br />
-              • 边界源：所有类型都映射为 type="ambient"，通过不同参数实现不同行为<br />
+              • 体积源预设：映射为 ambient，并自动选择或创建一个 virtual 边界<br />
+              • uniform/cosine：保留 Starfish 支持的源类型；thermionic 映射为 ambient<br />
               • 导出后可使用 StarfishCLI.jar 做额外兼容性验证
             </Typography>
           </Box>

@@ -7,7 +7,7 @@ set -e
 
 PROJECT_NAME="ezxml4starfish"
 COMPOSE_FILE="docker-compose.prod.yml"
-NETWORK_NAME="mynetwork"
+NETWORK_NAME="ezxml-network"
 
 # 颜色输出
 RED='\033[0;31m'

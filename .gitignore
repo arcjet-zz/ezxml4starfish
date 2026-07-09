@@ -1,5 +1,6 @@
 # Exclude all txt files
 *.txt
+!backend/requirements.txt
 
 # Exclude all md files except README.md
 *.md
@@ -7,6 +8,10 @@
 
 # Local acceptance artifacts
 ACCEPTANCE_CHECKLIST.md
+StarfishCLI.jar
+generated_project.zip
+generated_xml/
+starfish_runs/
 
 # Python
 __pycache__/

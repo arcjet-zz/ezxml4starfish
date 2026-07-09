@@ -22,18 +22,27 @@ app = FastAPI(
 # 配置CORS中间件
 import os
 environment = os.getenv("ENVIRONMENT", "development")
+configured_origins = os.getenv("CORS_ORIGINS")
 
-if environment == "production":
-    # 生产环境：只允许来自同一网络的请求
-    allowed_origins = ["*"]  # 在生产环境中，通过nginx代理，所以允许所有来源
+def parse_origins(value: str):
+    """Parse comma-separated CORS origins from the environment."""
+    return [origin.strip() for origin in value.split(",") if origin.strip()]
+
+if configured_origins:
+    allowed_origins = parse_origins(configured_origins)
+elif environment == "production":
+    # 生产环境默认通过前端nginx同源代理访问API，不开放跨源访问
+    allowed_origins = []
 else:
     # 开发环境：允许本地开发服务器
     allowed_origins = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
+allow_credentials = "*" not in allowed_origins
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
-    allow_credentials=True,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
